@@ -2,10 +2,15 @@ package tamagoshi.tamagoshis;
 
 import java.util.Random;
 
-import javax.swing.JLabel;
 
+import javax.swing.JLabel;
 import tamagoshi.graphic.TamaJPanel;
 
+/**
+ * Classe représentant un Tamagoshi de façon purement logique
+ * @author Maxime Bertrand
+ *
+ */
 public class Tamagoshi {
 
 	private String name;
@@ -16,9 +21,6 @@ public class Tamagoshi {
 	private static int lifeTime=10;
 	
 	private TamaJPanel tamaPanel;
-	
-	private JLabel humeur;
-	private JLabel parle;
 	
 	/**
 	 * @param name le nom du tamagoshi
@@ -33,11 +35,8 @@ public class Tamagoshi {
 		fun=generateur.nextInt(5)+3;
 		
 		this.tamaPanel = new TamaJPanel();
-		this.humeur = new JLabel();
-		this.parle = new JLabel();
-		this.tamaPanel.add(humeur);
-		this.tamaPanel.add(parle);
 		this.parle();
+		this.tamaPanel.setTextAge(String.valueOf(this.age));
 	}
 
 	public void parle() //Exo 16
@@ -51,10 +50,10 @@ public class Tamagoshi {
 			s+="je m'ennuie à mourrir";
 		}
 		if(s.isEmpty()){
-			this.humeur.setText(parler("Tout va bien !"));
+			this.tamaPanel.setTextHumeur(parler("Tout va bien !"));
 		}
 		else{
-			this.humeur.setText(parler(s+" !"));
+			this.tamaPanel.setTextHumeur(parler(s+" !"));
 		}
 	}
 
@@ -68,25 +67,26 @@ public class Tamagoshi {
 		if (energy < maxEnergy)
 		{
 			energy += generateur.nextInt(3)+1;
-			this.parle.setText(parler("Merci !"));
+			this.tamaPanel.setTextParle(parler("Merci !"));
 			return true;
 		}
 		else	
 		{
-			this.parle.setText(parler("je n'ai pas faim !!"));
+			this.tamaPanel.setTextParle(parler("je n'ai pas faim !!"));
 			return false;
 		}
 	}
 
 	public boolean vieillit(){ 	//Exo 5
 		age++;
+		this.tamaPanel.setTextAge(String.valueOf(this.age));
 		return age==getLifeTime();
 	}
 
 	public boolean consommeEnergie(){	//Exo 6
 		energy--;
 		if(energy<=0){
-			this.humeur.setText(parler("je suis KO: Arrrggh !"));
+			this.tamaPanel.setTextHumeur(parler("je suis KO: Arrrggh !"));
 			return false;
 		}
 		return true;
@@ -95,13 +95,13 @@ public class Tamagoshi {
 	public boolean consommeFun(){	//Exo 6
 		fun--;
 		if(fun<=0){
-			this.humeur.setText(parler("snif : je fais une dépression, ciao!"));
+			this.tamaPanel.setTextHumeur(parler("snif : je fais une dépression, ciao!"));
 			return false;
 		}
 		return true;
 	}
 	/**
-	 * @return Returns the age.
+	 * @return Retourne l'âge.
 	 */
 	public int getAge() {
 		return age;
@@ -112,7 +112,7 @@ public class Tamagoshi {
 	}
 
 	/**
-	 * @return Returns the lifeTime.
+	 * @return Retourne la durée de vie.
 	 */
 	public static int getLifeTime() {
 		return lifeTime;
@@ -121,11 +121,11 @@ public class Tamagoshi {
 	public boolean joue(){
 		if (fun < maxFun){
 			fun += generateur.nextInt(3)+1;
-			this.parle.setText(parler("On se marre !"));
+			this.tamaPanel.setTextParle(parler("On se marre !"));
 			return true;
 		}
 		else{
-			this.parle.setText(parler("laisse-moi tranquille, je bouquine !!"));
+			this.tamaPanel.setTextParle(parler("laisse-moi tranquille, je bouquine !!"));
 			return false;
 		}
 	}
@@ -138,9 +138,14 @@ public class Tamagoshi {
 		return fun>0 && energy>0;
 	}
 
+	
+	
 	public TamaJPanel getPanel() {
-		// TODO Auto-generated method stub
 		return this.tamaPanel;
+	}
+
+	public void resetParleLbl() {
+		this.tamaPanel.setTextParle("");
 	}
 
 }

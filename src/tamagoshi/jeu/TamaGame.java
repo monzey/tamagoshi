@@ -119,10 +119,10 @@ public class TamaGame {
 		return index;
 	}
 
-	/**Exécute le programme du jeu*/
-	public static void main(String[] args) {
-		TamaGame jeu = new TamaGame();
-		jeu.play();
-	}
+//	/**Exécute le programme du jeu*/
+//	public static void main(String[] args) {
+//		TamaGame jeu = new TamaGame();
+//		jeu.play();
+//	}
 
 }

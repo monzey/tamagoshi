@@ -19,6 +19,12 @@ import javax.swing.JTextPane;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 
+
+/**
+ * Classe représentant un tamagoshi graphiquement
+ * @author Maxime Bertrand
+ *
+ */
 public class TamaFrame extends Observable implements Observer{
 
 	private JFrame frame;
@@ -31,19 +37,21 @@ public class TamaFrame extends Observable implements Observer{
 	private JButton btnNourrir;
 	private JButton btnJouer;
 	
-	private static final int BTN_JOUER = 10;
-	private static final int BTN_NOURRIR = 20;
+	public static final int BTN_JOUER = 10;
+	public static final int BTN_NOURRIR = 20;
+
+	public static final int NEXT_CYCLE = 30;
 	
 	
 
 	/**
-	 * Launch the application.
+	 * Lancement d'une frame individuelle
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					TamaFrame frame = new TamaFrame("Jean-paul");
+					TamaFrame frame = new TamaFrame(new Tamagoshi("Jean-paul"));
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -52,13 +60,21 @@ public class TamaFrame extends Observable implements Observer{
 		});
 	}
 	
-	public TamaFrame(String nomTmagoshi){
-		init(nomTmagoshi);
+	/**
+	 * Constructeur d'une TamaFrame
+	 * @param tama un tamagoshi quelconque
+	 */
+	public TamaFrame(Tamagoshi tama){
+		init(tama);
 	}
 
-
-	private void init(String nomTamagoshi) {
-		this.tamagoshi = new Tamagoshi(nomTamagoshi);
+	/**
+	 * Initialise la fenêtre du Tamagoshi et les différents éléments graphiques
+	 * permettant d'intéragir avec ce dernier
+	 * @param tama un tamagoshi quelconque
+	 */
+	private void init(Tamagoshi tama) {
+		this.tamagoshi = tama;
 		this.frame = new JFrame();
 		this.frame.setTitle(this.tamagoshi.getName());
 		this.tamaPanel = this.tamagoshi.getPanel();
@@ -85,7 +101,9 @@ public class TamaFrame extends Observable implements Observer{
 				tamagoshi.mange();
 				setChanged();
 				notifyObservers(TamaFrame.BTN_NOURRIR);
+				notifyNextCycle();
 			}
+
 		});
 		
 		btnJouer = new JButton("Jouer");
@@ -99,19 +117,23 @@ public class TamaFrame extends Observable implements Observer{
 				tamagoshi.joue();
 				setChanged();
 				notifyObservers(TamaFrame.BTN_JOUER);
+				notifyNextCycle();
 			}
 		});
 		
 	}
 	
-	public boolean nourri(){
-		
-		return false;
+	/**
+	 * Notification aux écouteurs du passage au cycle suivant dans
+	 * le cours de la partie en cours
+	 */
+	private void notifyNextCycle() {
+		if(this.bothBtnsDisabled()){
+			this.setChanged();
+			this.notifyObservers(TamaFrame.NEXT_CYCLE);
+		}
 	}
 	
-	public boolean joué(){
-		return false;
-	}
 	
 	public void setVisible(boolean b){
 		this.frame.setVisible(b);
@@ -120,19 +142,69 @@ public class TamaFrame extends Observable implements Observer{
 	@Override
 	public void update(Observable o, Object arg) {
 		// TODO Auto-generated method stub
-		if((int)arg == TamaFrame.BTN_JOUER) this.btnJouer.setEnabled(false);
-		else this.btnNourrir.setEnabled(false);
+		if((int)arg == TamaFrame.BTN_JOUER){
+			this.btnJouer.setEnabled(false);
+		}
+		else if((int)arg == TamaFrame.BTN_NOURRIR){
+			this.btnNourrir.setEnabled(false);
+		}
 	}
 	
+	/**
+	 * Ajout de plusieurs Observer
+	 * @param obs une collection d'Observer (TamaFrame en l'occurrence)
+	 */
 	public void addObservers(ArrayList<TamaFrame> obs){ 
 		for (Observer observer : obs) {
 			this.addObserver(observer);
 		}
 	}
 
+	/**
+	 * Vérifie que les deux boutons "nourrir" et "jouer" sont désactivés
+	 * @return
+	 */
 	public boolean bothBtnsDisabled() {
-		// TODO Auto-generated method stub
-		return !(this.btnJouer.isEnabled() && this.btnNourrir.isEnabled());
+		return (!this.btnJouer.isEnabled() && !this.btnNourrir.isEnabled());
+	}
+
+	/**
+	 * Passe au cycle suivant et veille au bon déroulement de l'anthropie des Tamagoshis
+	 * (vieillissement, faim, ennui)
+	 * @return
+	 */
+	public boolean cycleSuivant() {
+		if(! this.tamagoshi.consommeEnergie() || ! this.tamagoshi.consommeFun() || this.tamagoshi.vieillit()){
+			this.disableBothBtns();
+			return false;
+		} else{
+			this.enableBothBtns();
+			this.tamagoshi.parle();
+			return true;
+		}
+	}
+
+	/**
+	 * Désactive les deux boutons "nourrir" et "jouer"
+	 */
+	public void disableBothBtns() {
+		this.btnNourrir.setEnabled(false);
+		this.btnJouer.setEnabled(false);
+	}
+
+	/**
+	 * Active les deux boutons "nourrir" et "jouer"
+	 */
+	public void enableBothBtns() {
+		this.btnNourrir.setEnabled(true);
+		this.btnJouer.setEnabled(true);
+	}
+	/**
+	 * 
+	 * @return tamagoshi le tamagoshi de la TamaFrame
+	 */
+	public Tamagoshi getTamagoshi() {
+		return this.tamagoshi;
 	}
 	
 	

@@ -9,6 +9,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JMenuBar;
@@ -41,12 +43,33 @@ import javax.swing.Action;
 import org.xml.sax.InputSource;
 
 import tamagoshi.graphic.TamaFrame;
+import tamagoshi.tamagoshis.GrosJoueur;
+import tamagoshi.tamagoshis.GrosMangeur;
+import tamagoshi.tamagoshis.Tamagoshi;
+import tamagoshi.util.Utilisateur;
 
-public class TamaGameGraphic extends JFrame{
+import java.awt.FlowLayout;
+
+import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.ColumnSpec;
+import com.jgoodies.forms.factories.FormFactory;
+import com.jgoodies.forms.layout.RowSpec;
+
+
+/**
+ * Classe permettant de lancer une partie de Tamagoshi en mode Graphique
+ * @author Maxime Bertrand
+ *
+ */
+public class TamaGameGraphic extends JFrame implements Observer{
 
 	private JPanel contentPane;
-	private ArrayList<TamaFrame> tamaFrames;
-	private JLabel cycle;
+	private ArrayList<TamaFrame> tamasFrames;
+	private ArrayList<Tamagoshi> vivants;
+	private JLabel lblCycle;
+	
+	private JLabel lblDifficulte;
+	private JLabel lblGeneration;
 	
 	private Properties parametres;
 	private Properties noms;
@@ -61,7 +84,7 @@ public class TamaGameGraphic extends JFrame{
 	InputStream inNoms = null;
 	OutputStream outNoms = null;
 
-
+	private int numeroCycle = 1;
 	
 	
 	/**
@@ -72,31 +95,52 @@ public class TamaGameGraphic extends JFrame{
 	}
 
 	private void init() {
-		this.tamaFrames = new ArrayList<TamaFrame>();
+		this.tamasFrames = new ArrayList<TamaFrame>();
 		this.parametres = new Properties();
 		this.noms = new Properties();
 		
-		String contenuGenerationNom = "";
-		String contenuDifficulte = "";
-		String contenuCycle = "Jeu de Tamagoshi - Développé par Monzey \n" + contenuGenerationNom + contenuDifficulte;
+		this.vivants = new ArrayList<Tamagoshi>();
 		
-		cycle = new JLabel();
-		cycle.setText(contenuCycle);
-		this.getContentPane().add(cycle);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		contentPane.setLayout(new BorderLayout(0, 0));
+		setContentPane(contentPane);
+		loadInitFiles();
 		
-		try {
-			inParams = new FileInputStream(emplacementParametres);
-			inNoms = new FileInputStream(emplacementGenerationNoms);
-			parametres.load(inParams);
-			noms.load(inNoms);
-			
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		JPanel panel = new JPanel();
+		contentPane.add(panel, BorderLayout.CENTER);
+		FormLayout fl_panel = new FormLayout(new ColumnSpec[] {
+				ColumnSpec.decode("150px"),
+				ColumnSpec.decode("150px"),
+				FormFactory.LABEL_COMPONENT_GAP_COLSPEC,
+				ColumnSpec.decode("70px"),},
+			new RowSpec[] {
+				FormFactory.LINE_GAP_ROWSPEC,
+				RowSpec.decode("15px"),
+				FormFactory.RELATED_GAP_ROWSPEC,
+				FormFactory.DEFAULT_ROWSPEC,
+				FormFactory.RELATED_GAP_ROWSPEC,
+				FormFactory.DEFAULT_ROWSPEC,
+				FormFactory.RELATED_GAP_ROWSPEC,
+				FormFactory.DEFAULT_ROWSPEC,
+				FormFactory.RELATED_GAP_ROWSPEC,
+				FormFactory.DEFAULT_ROWSPEC,});
+		panel.setLayout(fl_panel);
+		
+		this.lblDifficulte = new JLabel("Difficulte : " + (this.parametres.getProperty("difficulte")));
+		panel.add(lblDifficulte, "1, 2, 4, 1, left, top");
+		
+		this.lblGeneration = new JLabel("Génération des noms : " + ((this.parametres.getProperty("generation").equals("oui")) ? "automatique" : "manuelle"));
+		panel.add(lblGeneration, "1, 4, 4, 1, left, top");
+		
+		this.lblCycle = new JLabel("");
+		panel.add(lblCycle, "1, 10, 4, 1");
+		
+		
+		
+		String contenuGenerationNom = "Génération des noms : " + ((this.parametres.getProperty("generation").equals("oui")) ? "automatique" : "manuelle") ;
+		String contenuDifficulte = "Difficulte : " + (this.parametres.getProperty("difficulte"));
+		
 		
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,6 +166,8 @@ public class TamaGameGraphic extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				play();
+				lblCycle.setText("----------------Cycle n°" + numeroCycle + "----------------");
+				System.out.println("----------------Cycle n°" + numeroCycle + "----------------");
 			}
 		});
 		
@@ -206,10 +252,28 @@ public class TamaGameGraphic extends JFrame{
 		mnAide.add(mntmAide);
 		mntmAide.setMnemonic(KeyEvent.VK_I);
 		
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPane.setLayout(new BorderLayout(0, 0));
-		setContentPane(contentPane);
+	
+		
+	}
+
+	/**
+	 * Charge le fichier nécessaire à la configuration par défaut
+	 * (difficulté, génération des noms automatiques)
+	 */
+	private void loadInitFiles() {
+		try {
+			inParams = new FileInputStream(emplacementParametres);
+			inNoms = new FileInputStream(emplacementGenerationNoms);
+			parametres.load(inParams);
+			noms.load(inNoms);
+			
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 	
 	private void enregistrerParametres() {
@@ -223,36 +287,132 @@ public class TamaGameGraphic extends JFrame{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-	}
-	
-	
-	private void play(){
-		for (int i = 1; i <= Integer.valueOf(parametres.getProperty("difficulte")); i++) {
-		tamaFrames.add(new TamaFrame(noms.getProperty(String.valueOf(i))));
-		}
-		for (TamaFrame tamaFrame : tamaFrames) {
-			tamaFrame.setVisible(true);
-			tamaFrame.addObservers(tamaFrames);
-			System.out.println(tamaFrame.countObservers());
-		}
-//		int numCycle = 0;
-//		boolean nextTurn = false;
-//		while(numCycle < NB_CYCLES){
-//			System.out.println("Partie lancée");
-//			for (TamaFrame tamaFrame : tamaFrames) {
-//					nextTurn = (tamaFrame.bothBtnsDisabled());
-//			}
-//			if(nextTurn) numCycle++;
-//		}
+		this.lblDifficulte.setText("Difficulte : " + (this.parametres.getProperty("difficulte")));
+		this.lblGeneration.setText("Génération des noms : " + ((this.parametres.getProperty("generation").equals("oui")) ? "automatique" : "manuelle"));
 	}
 	
 	/**
-	 * Launch the application.
+	 * Lance le jeu et crée une fenêtre pour chaque tamagoshi créé par le joueur
 	 */
+	private void play(){
+		
+		if(this.parametres.getProperty("generation").equals("oui")){
+			for (int i = 1; i <= Integer.valueOf(parametres.getProperty("difficulte")); i++) {
+				Tamagoshi t;
+				if(Math.random()<.5)
+					t = new GrosJoueur(noms.getProperty(String.valueOf(i)));
+				else
+					t = new GrosMangeur(noms.getProperty(String.valueOf(i)));
+				tamasFrames.add(new TamaFrame(t));
+				this.vivants.add(t);
+			}
+		} else {
+			for (int i = 1; i <= Integer.valueOf(parametres.getProperty("difficulte")); i++) {
+				Tamagoshi t;
+				if(Math.random()<.5)tamasFrames.add(new TamaFrame(new GrosJoueur(JOptionPane.showInputDialog("Veuillez saisir le nom des tamagoshis"))));
+				else
+					tamasFrames.add(new TamaFrame(new GrosMangeur(JOptionPane.showInputDialog("Veuillez saisir le nom des tamagoshis"))));
+			}
+		}
+		
+		for (TamaFrame tamaFrame : tamasFrames) {
+			tamaFrame.setVisible(true);
+			tamaFrame.addObservers(tamasFrames);
+			tamaFrame.addObserver(this);
+		}
+		
+	}
+	
+	
 	public static void main(String[] args) {
 		TamaGameGraphic frame = new TamaGameGraphic();
 		frame.setVisible(true);
 	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		// TODO Auto-generated method stub
+		if(((int)arg == TamaFrame.NEXT_CYCLE)){
+			if(!this.vivants.isEmpty() && numeroCycle <= TamaGameGraphic.NB_CYCLES){
+				for (TamaFrame tamaFrame : tamasFrames) {
+					if (!tamaFrame.cycleSuivant()){
+						this.vivants.remove(tamaFrame.getTamagoshi());
+					}
+				}
+				continueGame();
+				if(this.vivants.isEmpty()){
+					endGame();
+				}
+			} else {
+				endGame();
+			}
+		} 
+	}
+
+	/**
+	 * Continue le jeu en passant au cycle suivant
+	 */
+	private void continueGame() {
+		this.lblCycle.setText("----------------Cycle n°" + numeroCycle + "----------------");
+		System.out.println("----------------Cycle n°" + numeroCycle + "----------------");
+		numeroCycle++;
+	}
+
+	/**
+	 * Termine le jeu et calcule les résultats
+	 */
+	private void endGame() {
+		for (TamaFrame tamaFrame : tamasFrames) {
+			tamaFrame.disableBothBtns();
+		}
+		this.lblCycle.setText("----------------Fin de la partie----------------");
+		System.out.println("----------------Fin de la partie----------------");
+		calculResultats();
+//		enregistrementMeilleurScores();
+	}
+
+	
+	/*
+	 * Permet de calculer les 3 meilleurs scores en fonction de la difficulté (non terminé)
+	 */
+	
+//	private void enregistrementMeilleurScores() {
+//		try{
+//			String[] scores = this.parametres.getProperty("meilleur.score.difficulte."+this.parametres.getProperty("difficulte"));
+//		} catch(NullPointerException e) {
+//			this.parametres.setProperty("meilleur.score.difficulte."+this.parametres.getProperty("difficulte"), String.valueOf(score()+","));
+//		} finally {
+//			enregistrerParametres();
+//		}
+//	}
+
+	/**
+	 * Résume la partie en affichant les catégories de Tamagoshis présents dans la partie
+	 * et en calculant le score total du joueur.
+	 */
+	
+	private void calculResultats() {
+		String resultats = "<html>-------------bilan------------<br>";
+		for(TamaFrame t : this.tamasFrames){
+			String classe = t.getTamagoshi().getClass().getSimpleName();
+			resultats += t.getTamagoshi().getName()+" qui était un "+classe+" "+(t.getTamagoshi().getAge()==Tamagoshi.getLifeTime()?" a survécu et vous remercie :)":" n'est pas arrivé au bout et ne vous félicite pas :(<br>");
+		}
+		resultats += "<br>niveau de difficulté : "+this.tamasFrames.size()+", score obtenu :"+score()+"%</html>";
+		this.lblCycle.setText(resultats);
+	}
+	
+	/**
+	 * Calcule les résultats en fonction de l'âge de tous les tamagoshis par 
+	 * rapport à la somme des âges max de tous les tamagoshis
+	 * @return score 
+	 */
+	private double score(){
+		int score=0;
+		for(TamaFrame t : this.tamasFrames)
+			score += t.getTamagoshi().getAge();
+		return score*100/(Tamagoshi.getLifeTime()*this.tamasFrames.size());
+	}
+	
 
 
 	
